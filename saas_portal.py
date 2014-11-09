@@ -31,30 +31,30 @@ def set_init_uri():
     global cmd_args, init_uri
     # We are always using 443 for now
     init_uri = "https://" + cmd_args['saas_host'] + ":443" + \
-               "/api/akam/bo/v1/saas/vendors/1/platforms/O365/"
+               "/X/Y/Z/A/saas/vendors/1/platforms/D/"
     return
 
 URI_MAP = {
-            'geodns-all': { 
-                            'resource': 'geodns/',
-                            'print': 'geodns_all_print'
+            'resource-all': { 
+                            'resource': 'resource/',
+                            'print': 'resource_all_print'
                           },
 
-            'geodns-regions': {
-                                'resource': 'geodns/regions/',
-                                'print': 'geodns_region_print',
+            'resource-regions': {
+                                'resource': 'resource/regions/',
+                                'print': 'resource_region_print',
                                 'post_cb': 'gen_data_add_region'
                               },
 
-            'geodns-mb-region': {
-                                  'resource': 'geodns/regions/{0}/mailboxes/',
-                                  'print': 'geodns_mb_region_print',
+            'resource-mb-region': {
+                                  'resource': 'resource/regions/{0}/databoxes/',
+                                  'print': 'resource_mb_region_print',
                                   'post_cb': 'gen_data_add_mbx' 
                                 },
 
-            'geodns-ip-region': {
-                                  'resource': 'geodns/regions/{0}/ips/',
-                                  'print': 'geodns_ip_region_print',
+            'resource-ip-region': {
+                                  'resource': 'resource/regions/{0}/ips/',
+                                  'print': 'resource_ip_region_print',
                                   'post_cb': 'gen_data_add_ips'
                                 },
 
@@ -70,7 +70,7 @@ URI_MAP = {
     Python requests wrappers
 """
 
-def geodns_all_print(xml, callback = False):
+def resource_all_print(xml, callback = False):
     tree = ET.ElementTree(ET.fromstring(xml))
     print "Mailbox to Region Mapping:"
     print "--------------------------"
@@ -105,7 +105,7 @@ def geodns_all_print(xml, callback = False):
 
     return
 
-def geodns_region_print(xml, callback = False):
+def resource_region_print(xml, callback = False):
     tree = ET.ElementTree(ET.fromstring(xml))
     print "All regions:"
     print "------------"
@@ -120,19 +120,19 @@ def geodns_region_print(xml, callback = False):
     return
 
 
-def geodns_mb_region_print(xml, callback = False):
+def resource_mb_region_print(xml, callback = False):
     tree = ET.ElementTree(ET.fromstring(xml))
 
     print "Mailboxes for region:"
     print "---------------------"
 
-    mbx_list = tree.find('mailboxes')
+    mbx_list = tree.find('databoxes')
     for mbx in mbx_list:
         print mbx.text
 
     return
 
-def geodns_ip_region_print(xml, callback = False):
+def resource_ip_region_print(xml, callback = False):
     tree = ET.ElementTree(ET.fromstring(xml))
 
     print "IP Addresses for region:"
@@ -161,12 +161,12 @@ def gen_data_add_region(regions = []):
 
     buffer = cStringIO.StringIO()
     buffer.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    buffer.write('<geodns>\n')
+    buffer.write('<resource>\n')
 
     for region in regions:
         buffer.write("<region>{0}</region>\n".format(region))
 
-    buffer.write('</geodns>')
+    buffer.write('</resource>')
 
     content = buffer.getvalue()
     log.debug(content)
@@ -180,14 +180,14 @@ def gen_data_add_mbx(mbxs = []):
 
     buffer = cStringIO.StringIO()
     buffer.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    buffer.write('<geodns>\n')
-    buffer.write('<mailboxes>\n')
+    buffer.write('<resource>\n')
+    buffer.write('<databoxes>\n')
 
     for mbx in mbxs:
-        buffer.write("<mailbox>{0}</mailbox>".format(mbx))
+        buffer.write("<databox>{0}</databox>".format(mbx))
 
-    buffer.write('</mailboxes>\n')
-    buffer.write('</geodns>\n')
+    buffer.write('</databoxes>\n')
+    buffer.write('</resource>\n')
 
     content = buffer.getvalue()
     log.debug(content)
@@ -201,14 +201,14 @@ def gen_data_add_ips(ips = []):
 
     buffer = cStringIO.StringIO()
     buffer.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-    buffer.write('<geodns>\n')
+    buffer.write('<resource>\n')
     buffer.write('<addresses>\n')
 
     for ip in ips:
         buffer.write('<address>{0}</address>'.format(ip))
 
     buffer.write('</addresses>\n')
-    buffer.write('</geodns>\n')
+    buffer.write('</resource>\n')
 
     content = buffer.getvalue()
     log.debug(content)
@@ -309,9 +309,9 @@ def process_cmd():
     log.debug("Fetching resource for service {0}".format(service))
 
     if service:
-        if service in ['geodns-mb-region', 'geodns-ip-region']: 
+        if service in ['resource-mb-region', 'resource-ip-region']: 
             if not cmd_args['req_region']:
-                log.error("Region not provided for getting mailboxes")
+                log.error("Region not provided for getting databoxes")
                 sys.exit(1)
 
             URI_MAP[service]['resource'] = \
@@ -334,7 +334,7 @@ def process_cmd():
                     make_post_req(URI_MAP['saas-hosts']['resource'],
                                   data)
 
-            elif service == 'geodns-mbx-region':
+            elif service == 'resource-mbx-region':
                 mbx_list = cmd_args['mbx_list']
                 ip_list = cmd_args['ip_list']
 
@@ -346,29 +346,29 @@ def process_cmd():
                 region = cmd_args['req_region']
 
                 # Check if region exists
-                ret = make_get_req(URI_MAP['geodns-regions']['resource'],
-                                   URI_MAP['geodns-regions']['print'],
+                ret = make_get_req(URI_MAP['resource-regions']['resource'],
+                                   URI_MAP['resource-regions']['print'],
                                    lambda x: True if x == region else False)
 
                 if not ret:
-                    ## Add region first, and then mailbox
-                    cb = URI_MAP['geodns-regions']['post_cb']
+                    ## Add region first, and then databox
+                    cb = URI_MAP['resource-regions']['post_cb']
                     data = globals()[cb]([region])
-                    make_post_req(URI_MAP['geodns-regions']['resource'],
+                    make_post_req(URI_MAP['resource-regions']['resource'],
                                   data)
                 if mbx_list:
-                    cb = URI_MAP['geodns-mb-region']['post_cb']
+                    cb = URI_MAP['resource-mb-region']['post_cb']
                     data = globals()[cb](mbx_list)
-                    make_post_req((URI_MAP['geodns-mb-region']['resource']).format(region),
+                    make_post_req((URI_MAP['resource-mb-region']['resource']).format(region),
                                   data)
                 if ip_list:
-                    cb = URI_MAP['geodns-ip-region']['post_cb']
+                    cb = URI_MAP['resource-ip-region']['post_cb']
                     data = globals()[cb](ip_list)
-                    make_post_req((URI_MAP['geodns-ip-region']['resource']).format(region),
+                    make_post_req((URI_MAP['resource-ip-region']['resource']).format(region),
                                   data)
 
         if req_type == 'delete_request':
-            if service == 'geodns-mbx-region':
+            if service == 'resource-mbx-region':
                 mbx_list = cmd_args['mbx_list']
                 ip_list  = cmd_args['ip_list']
                 region   = cmd_args['req_region']
@@ -377,20 +377,20 @@ def process_cmd():
                     return
 
                 if (not mbx_list) and (not ip_list):
-                    resource = URI_MAP['geodns-regions']['resource'] + region + '/'
+                    resource = URI_MAP['resource-regions']['resource'] + region + '/'
                     make_delete_req(resource)
                     return
 
                 if mbx_list:
                     mbx_list = mbx_list.split(',')
                     for mbx in mbx_list:
-                        resource = (URI_MAP['geodns-mb-region']['resource']).format(region) + mbx + '/'
+                        resource = (URI_MAP['resource-mb-region']['resource']).format(region) + mbx + '/'
                         make_delete_req(resource)
                 
                 if ip_list:
                     ip_list = ip_list.split(',')
                     for ip in ip_list:
-                        resource = (URI_MAP['geodns-ip-region']['resource']).format(region) + ip + '/'
+                        resource = (URI_MAP['resource-ip-region']['resource']).format(region) + ip + '/'
                         make_delete_req(resource)
 
             elif service == 'saas-hosts':
@@ -427,20 +427,20 @@ def parse_cmd_args():
     parser.add_argument('--host', action = 'store', dest = 'saas_host',
                         help = 'Saas Portal host name', required = True)
 
-    parser.add_argument('--get', choices = ('geodns-regions', 'geodns-all', 'geodns-mb-region', 
-                                            'geodns-ip-region', 'saas-hosts'),
+    parser.add_argument('--get', choices = ('resource-regions', 'resource-all', 'resource-mb-region', 
+                                            'resource-ip-region', 'saas-hosts'),
                         dest = 'get_request')
 
     parser.add_argument('--region', action = 'store', dest = 'req_region',
-                        help = "Enter the region name for the mailboxes")
+                        help = "Enter the region name for the databoxes")
 
-    parser.add_argument('--post', choices = ('geodns-mbx-region', 'saas-hosts'),
+    parser.add_argument('--post', choices = ('resource-mbx-region', 'saas-hosts'),
                         dest = 'post_request',
-                        help = 'Use for adding single/multiple mailboxes to a region. \
-                        Use --mbx-list to specify mailboxes and --region to specify the region')
+                        help = 'Use for adding single/multiple databoxes to a region. \
+                        Use --mbx-list to specify databoxes and --region to specify the region')
 
     parser.add_argument('--mbx-list', action = 'store', dest = 'mbx_list',
-                        help = 'List of mailboxes for a region. Use with --post/delete geodns-mbx-region')
+                        help = 'List of databoxes for a region. Use with --post/delete resource-mbx-region')
 
     parser.add_argument('--ip-list', action = 'store', dest = 'ip_list',
                         help = 'List of IP addresses for a region. Use with --post/delete ')
@@ -448,7 +448,7 @@ def parse_cmd_args():
     parser.add_argument('--hosts-list', action = 'store', dest = 'hosts_list',
                         help = 'List of Saas hosts. Use with --post/delete saas-hosts')
 
-    parser.add_argument('--delete', choices = ('geodns-mbx-region', 'saas-hosts'),
+    parser.add_argument('--delete', choices = ('resource-mbx-region', 'saas-hosts'),
                         dest = 'delete_request',
                         help = 'Use for deleting mail boxes/regions/ip')
 
@@ -477,13 +477,13 @@ def validate_cmd_args():
     global cmd_args, log
 
     log.info(str(cmd_args))
-    # Check '--mailbox' option is provided when --get is geodns-mb-region
+    # Check '--databox' option is provided when --get is resource-mb-region
     # option
-    if cmd_args['get_request'] == 'geodns-mb-region':
+    if cmd_args['get_request'] == 'resource-mb-region':
         if not cmd_args['req_region']:
             return False
 
-    if cmd_args['post_request'] == 'geodns-mbx-region':
+    if cmd_args['post_request'] == 'resource-mbx-region':
         if cmd_args['mbx_list'] or cmd_args['ip_list']:
             if not cmd_args['req_region']:
                 return False
